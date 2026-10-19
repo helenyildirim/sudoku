@@ -5,6 +5,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -37,3 +40,11 @@ jobs:
         with:
           name: sudoku-apk
           path: android/app/build/outputs/apk/release/app-release.apk
+
+      - name: APK'yı sürüm olarak yayınla (telefondan indirmek için)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-${{ github.run_number }}
+          name: Sudoku APK ${{ github.run_number }}
+          make_latest: true
+          files: android/app/build/outputs/apk/release/app-release.apk
