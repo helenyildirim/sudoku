@@ -1,0 +1,8 @@
+Sudoku - temiz proje (Expo SDK 57)
+
+Her komutu ayri calistir:
+  Expand-Archive $HOME\Downloads\sudoku-yeni.zip -DestinationPath $HOME\Downloads -Force
+  cd $HOME\Downloads\sudoku-yeni
+  npm install
+  $env:REACT_NATIVE_PACKAGER_HOSTNAME="192.168.137.169"
+  npx expo start --clear
