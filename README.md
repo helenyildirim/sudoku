@@ -1,5 +1,8 @@
 # Sudoku
 
+[![CI](https://github.com/helenyildirim/sudoku/actions/workflows/ci.yml/badge.svg)](https://github.com/helenyildirim/sudoku/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 A Sudoku game for Android built with Expo and React Native. The interface is in Turkish.
 
 <p>
@@ -47,3 +50,7 @@ GitHub Actions builds a release APK on every push to `main` and publishes it und
 ## Stack
 
 Expo SDK 57, React Native, AsyncStorage
+
+## License
+
+MIT
