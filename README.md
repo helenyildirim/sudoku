@@ -1,16 +1,44 @@
 # Sudoku
 
-Expo (SDK 57) ile yapılmış Türkçe Sudoku oyunu.
+A Sudoku game for Android built with Expo and React Native. The interface is in Turkish.
 
-- 4 zorluk seviyesi (çözmek için gereken tekniklere göre ayarlanır)
-- Akıllı ipucu: nedenini açıklar, ilgili satır/sütun/kutuyu işaretler
-- Sudoku Okulu: yeni başlayanlar için 5 interaktif ders
-- Günlük mücadele, seri, istatistikler ve 12 başarım
-- Kalem notları, Oto Not, geri al, açık/koyu tema, titreşim
+## Features
 
-## Çalıştırma
+- Four difficulty levels, rated by the solving techniques a puzzle needs
+- Hints that explain the reasoning and highlight the related row, column or box
+- Sudoku School: five interactive lessons for beginners
+- Daily challenge with streaks, statistics and 12 achievements
+- Pencil marks, auto notes, undo, light and dark themes, haptic feedback
+- Works offline, with progress saved on the device
+
+## How it works
+
+All game logic is in `sudoku.js`, separate from the UI.
+
+- The board is a flat array of 81 numbers, with `0` for an empty cell.
+- A puzzle starts as a full board filled by randomized backtracking. Cells are then removed one at a time, and a removal is kept only if the puzzle still has exactly one solution.
+- Each puzzle is scored by simulating the hints a player would need. The generator retries until the score fits the level.
+- The daily puzzle uses a seeded random number generator, so a given date always produces the same puzzle.
+
+## Run it
 
 ```
 npm install
 npx expo start
 ```
+
+## Tests
+
+```
+npm test
+```
+
+The tests cover puzzle generation, seeded output, the solver and the hint engine.
+
+## Build
+
+GitHub Actions builds a release APK on every push to `main` and publishes it under Releases.
+
+## Stack
+
+Expo SDK 57, React Native, AsyncStorage

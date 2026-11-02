@@ -28,6 +28,9 @@ jobs:
       - name: Paketleri kur
         run: npm ci
 
+      - name: Testleri çalıştır
+        run: npm test
+
       - name: Android projesini oluştur
         run: npx expo prebuild --platform android --no-install
 
