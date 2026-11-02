@@ -17,7 +17,8 @@ A Sudoku game for Android built with Expo and React Native. The interface is in 
 - Sudoku School: five interactive lessons for beginners
 - Daily challenge with streaks, statistics and 12 achievements
 - Pencil marks, auto notes, undo, light and dark themes, haptic feedback
-- Works offline, with progress saved on the device
+- Works offline, with regular and daily games saved separately on the device
+- Screen reader labels for the board and controls
 
 ## How it works
 

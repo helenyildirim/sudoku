@@ -91,7 +91,7 @@ export function Header({ title, subtitle, onBack, right }) {
     <View style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 8 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', minHeight: 36 }}>
         {onBack ? (
-          <Pressable onPress={onBack} hitSlop={12}>
+          <Pressable onPress={onBack} hitSlop={12} accessibilityRole="button" accessibilityLabel="Geri">
             <Ionicons name="chevron-back" size={26} color={c.text} />
           </Pressable>
         ) : (
@@ -110,6 +110,9 @@ export function Btn({ label, onPress, icon, variant = 'primary', style, disabled
   const primary = variant === 'primary';
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: !!disabled }}
       onPress={onPress}
       disabled={disabled}
       style={[
@@ -147,7 +150,7 @@ export function Card({ children, style, onPress }) {
   };
   if (onPress) {
     return (
-      <Pressable onPress={onPress} style={[base, style]}>
+      <Pressable accessibilityRole="button" onPress={onPress} style={[base, style]}>
         {children}
       </Pressable>
     );
@@ -178,7 +181,14 @@ export function TabBar({ active, onTab }) {
       {TABS.map((t) => {
         const on = active === t.key;
         return (
-          <Pressable key={t.key} onPress={() => onTab(t.key)} style={{ flex: 1, alignItems: 'center' }}>
+          <Pressable
+            key={t.key}
+            onPress={() => onTab(t.key)}
+            style={{ flex: 1, alignItems: 'center' }}
+            accessibilityRole="tab"
+            accessibilityLabel={t.label}
+            accessibilityState={{ selected: on }}
+          >
             <Ionicons name={on ? t.icon : `${t.icon}-outline`} size={24} color={on ? c.primary : c.sub} />
             <Text style={{ fontSize: 11, marginTop: 2, color: on ? c.primary : c.sub, fontWeight: on ? '700' : '500' }}>
               {t.label}

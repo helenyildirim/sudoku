@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { BackHandler, View } from 'react-native';
+import { ActivityIndicator, BackHandler, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { DARK, LIGHT, ThemeContext } from './src/theme';
 import { TabBar } from './src/ui';
+import ErrorBoundary from './src/ErrorBoundary';
 import { autoNotes, generatePuzzle } from './sudoku';
 import { ACHIEVEMENTS } from './src/achievements';
 import { longestStreak, seedFromKey, todayKey } from './src/dates';
@@ -37,7 +38,9 @@ import Legal from './src/screens/Legal';
 export default function App() {
   return (
     <SafeAreaProvider>
-      <Root />
+      <ErrorBoundary>
+        <Root />
+      </ErrorBoundary>
     </SafeAreaProvider>
   );
 }
@@ -52,6 +55,7 @@ function Root() {
   const [stats, setStats] = useState(DEFAULT_STATS);
   const [daily, setDaily] = useState(DEFAULT_DAILY);
   const [saved, setSaved] = useState(null);
+  const [savedDaily, setSavedDaily] = useState(null);
   const [game, setGame] = useState(null);
   const [gameKey, setGameKey] = useState(0);
   const [legal, setLegal] = useState('privacy');
@@ -64,12 +68,12 @@ function Root() {
       setSettings(d.settings);
       setStats(d.stats);
       setDaily(d.daily);
-      let g = d.game;
-      if (g && g.mode === 'daily' && g.dateKey !== todayKey()) {
-        g = null;
-        clearGame();
+      setSaved(d.game);
+      if (d.dailyGame && d.dailyGame.dateKey === todayKey()) {
+        setSavedDaily(d.dailyGame);
+      } else if (d.dailyGame) {
+        clearGame('daily');
       }
-      setSaved(g);
       // İlk açılışta karşılama + isim ekranı, sonrakilerde kısa açılış ekranı
       setScreen(d.profile ? 'splash' : 'welcome');
     })();
@@ -135,25 +139,45 @@ function Root() {
   };
 
   const startGame = (level, mode = 'normal') => {
-    const key = todayKey();
-    const seed = mode === 'daily' ? seedFromKey(key) : null;
-    const { puzzle, solution } = generatePuzzle(level, seed);
-    const values = [...puzzle];
-    setGame({
-      level,
-      puzzle,
-      solution,
-      mode,
-      dateKey: mode === 'daily' ? key : null,
-      values,
-      notes: settings.autoNotes ? autoNotes(values) : Array(81).fill(0),
-      mistakes: 0,
-      hints: 0,
-      seconds: 0,
-      status: 'play',
-    });
-    setGameKey((k) => k + 1);
-    setScreen('game');
+    // Zor bulmacalar yavaş telefonda zaman alabilir: önce yükleme ekranı çizilsin
+    setScreen('generating');
+    setTimeout(() => {
+      const key = todayKey();
+      const seed = mode === 'daily' ? seedFromKey(key) : null;
+      const { puzzle, solution } = generatePuzzle(level, seed);
+      const values = [...puzzle];
+      setGame({
+        level,
+        puzzle,
+        solution,
+        mode,
+        dateKey: mode === 'daily' ? key : null,
+        values,
+        notes: settings.autoNotes ? autoNotes(values) : Array(81).fill(0),
+        mistakes: 0,
+        hints: 0,
+        seconds: 0,
+        status: 'play',
+      });
+      setGameKey((k) => k + 1);
+      setScreen('game');
+    }, 30);
+  };
+
+  const openDaily = () => {
+    if (savedDaily && savedDaily.dateKey === todayKey()) {
+      setGame(savedDaily);
+      setGameKey((k) => k + 1);
+      setScreen('game');
+    } else {
+      startGame('medium', 'daily');
+    }
+  };
+
+  const reloadSaved = async () => {
+    const [normal, today] = await Promise.all([loadGame('normal'), loadGame('daily')]);
+    setSaved(normal);
+    setSavedDaily(today);
   };
 
   const resume = () => {
@@ -164,12 +188,12 @@ function Root() {
   };
 
   const exitGame = async () => {
-    setSaved(await loadGame());
+    await reloadSaved();
     setScreen('home');
   };
 
   const changeLevel = async () => {
-    setSaved(await loadGame());
+    await reloadSaved();
     setScreen('difficulty');
   };
 
@@ -270,7 +294,7 @@ function Root() {
       );
       break;
     case 'daily':
-      body = <Daily daily={daily} onBack={() => setScreen('home')} onPlay={() => startGame('medium', 'daily')} />;
+      body = <Daily daily={daily} onBack={() => setScreen('home')} onPlay={openDaily} />;
       break;
     case 'stats':
       body = <Stats stats={stats} daily={daily} />;
@@ -298,6 +322,14 @@ function Root() {
             setScreen('legal');
           }}
         />
+      );
+      break;
+    case 'generating':
+      body = (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <ActivityIndicator size="large" color={c.primary} />
+          <Text style={{ marginTop: 14, fontSize: 15, color: c.sub }}>Bulmaca hazırlanıyor...</Text>
+        </View>
       );
       break;
     case 'legal':

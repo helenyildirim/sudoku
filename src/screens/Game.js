@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { AppState, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LEVELS, useTheme } from '../theme';
-import { autoNotes, findHint, isPeer } from '../../sudoku';
+import { autoNotes, cellName, findHint, isPeer } from '../../sudoku';
 import { clearGame, saveGame } from '../storage';
 import { fmtTime } from '../dates';
 import { Btn } from '../ui';
@@ -50,6 +50,8 @@ const Board = React.memo(function Board({ values, notes, puzzle, solution, selec
           <Pressable
             key={i}
             onPress={() => onSelect(i)}
+            accessibilityRole="button"
+            accessibilityLabel={`${cellName(i)}: ${v || 'boş'}`}
             style={{
               width: cell,
               height: cell,
@@ -100,6 +102,9 @@ function Tool({ icon, label, onPress, active, disabled, badge }) {
   const { c } = useTheme();
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ selected: !!active, disabled: !!disabled }}
       onPress={onPress}
       disabled={disabled}
       style={{ flex: 1, alignItems: 'center', opacity: disabled ? 0.35 : 1 }}
@@ -145,6 +150,8 @@ function PauseItem({ icon, label, onPress, primary, outline }) {
   const { c } = useTheme();
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
       onPress={onPress}
       style={{
         height: 54,
@@ -208,7 +215,7 @@ export default function Game({ initial, settings, onExit, onFinish, onChangeLeve
   const secBucket = Math.floor(seconds / 5);
   useEffect(() => {
     if (status === 'play') saveGame(currentState());
-    else clearGame();
+    else clearGame(mode);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [values, notes, mistakes, hints, status, secBucket]);
 
@@ -348,7 +355,13 @@ export default function Game({ initial, settings, onExit, onFinish, onChangeLeve
       <ScrollView contentContainerStyle={{ paddingBottom: 16 }}>
         {/* Üst çubuk */}
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 8 }}>
-          <Pressable onPress={() => leave(onExit)} hitSlop={12} style={{ width: 44 }}>
+          <Pressable
+            onPress={() => leave(onExit)}
+            hitSlop={12}
+            style={{ width: 44 }}
+            accessibilityRole="button"
+            accessibilityLabel="Oyundan çık"
+          >
             <Ionicons name="chevron-back" size={26} color={c.text} />
           </Pressable>
           <View style={{ flex: 1, alignItems: 'center' }}>
@@ -453,6 +466,8 @@ export default function Game({ initial, settings, onExit, onFinish, onChangeLeve
                 key={n}
                 onPress={() => input(n)}
                 disabled={left === 0}
+                accessibilityRole="button"
+                accessibilityLabel={`${n} sayısı, ${left} kaldı`}
                 style={{
                   width: padW,
                   height: Math.round(padW * 0.9),

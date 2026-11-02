@@ -6,6 +6,7 @@ const K = {
   stats: 'sudoku_stats_v1',
   daily: 'sudoku_daily_v1',
   game: 'sudoku_game_v2',
+  dailyGame: 'sudoku_game_daily_v1',
 };
 
 export const DEFAULT_SETTINGS = {
@@ -50,12 +51,13 @@ async function set(key, value) {
 }
 
 export async function loadAll() {
-  const [profile, settings, stats, daily, game] = await Promise.all([
+  const [profile, settings, stats, daily, game, dailyGame] = await Promise.all([
     get(K.profile, null),
     get(K.settings, DEFAULT_SETTINGS),
     get(K.stats, DEFAULT_STATS),
     get(K.daily, DEFAULT_DAILY),
     get(K.game, null),
+    get(K.dailyGame, null),
   ]);
   return {
     profile,
@@ -67,7 +69,9 @@ export async function loadAll() {
       unlocked: stats.unlocked || {},
     },
     daily: { done: (daily && daily.done) || {} },
-    game,
+    // Eski sürümler tek kayıt kullanıyordu: günlük oyun orada olabilir
+    game: game && game.mode === 'daily' ? null : game,
+    dailyGame: dailyGame || (game && game.mode === 'daily' ? game : null),
   };
 }
 
@@ -75,8 +79,10 @@ export const saveProfile = (v) => set(K.profile, v);
 export const saveSettings = (v) => set(K.settings, v);
 export const saveStats = (v) => set(K.stats, v);
 export const saveDaily = (v) => set(K.daily, v);
-export const saveGame = (v) => set(K.game, v);
-export const loadGame = () => get(K.game, null);
+const gameKey = (mode) => (mode === 'daily' ? K.dailyGame : K.game);
+
+export const saveGame = (v) => set(gameKey(v.mode), v);
+export const loadGame = (mode = 'normal') => get(gameKey(mode), null);
 
 export async function clearProfile() {
   try {
@@ -84,8 +90,8 @@ export async function clearProfile() {
   } catch (e) {}
 }
 
-export async function clearGame() {
+export async function clearGame(mode = 'normal') {
   try {
-    await AsyncStorage.removeItem(K.game);
+    await AsyncStorage.removeItem(gameKey(mode));
   } catch (e) {}
 }
