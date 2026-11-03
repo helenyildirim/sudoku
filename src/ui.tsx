@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useState, type ReactNode } from 'react';
+import { Modal, Pressable, StyleSheet, Text, TextInput, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from './theme';
+import type { Level } from './game/sudoku';
+import type { IconName, McIconName } from './types';
 
 // ---------- Logo (tasarımdaki ikonun kod ile çizilmiş hali) ----------
-export function LogoMark({ size = 120 }) {
+export function LogoMark({ size = 120 }: { size?: number }) {
   const pad = Math.round(size * 0.09);
   const gap = Math.max(2, Math.round(size * 0.03));
   const cell = Math.floor((size - pad * 2 - gap * 2) / 3);
@@ -58,16 +60,21 @@ export function LogoMark({ size = 120 }) {
 }
 
 // ---------- Zorluk seviyesi bilgileri ----------
-export const LEVEL_INFO = {
+type LevelInfo = { color: string; bg: string; desc: string } & (
+  | { lib: 'ion'; icon: IconName }
+  | { lib: 'mci'; icon: McIconName }
+);
+
+export const LEVEL_INFO: Record<Level, LevelInfo> = {
   easy: { lib: 'ion', icon: 'leaf', color: '#10B981', bg: '#D9F5EA', desc: 'Yeni başlayanlar için ideal.' },
   medium: { lib: 'ion', icon: 'star', color: '#1F6BF5', bg: '#DCEBFF', desc: 'Daha fazla düşün, daha fazla keyif.' },
   hard: { lib: 'mci', icon: 'crown', color: '#F43F5E', bg: '#FFE1E6', desc: 'Gerçek bulmaca severler için.' },
   expert: { lib: 'ion', icon: 'diamond', color: '#0EA5E9', bg: '#D7F0FB', desc: 'Sınırlarını zorla.' },
 };
 
-export function LevelIcon({ level, size = 44 }) {
+export function LevelIcon({ level, size = 44 }: { level: Level; size?: number }) {
   const info = LEVEL_INFO[level];
-  const Icon = info.lib === 'mci' ? MaterialCommunityIcons : Ionicons;
+  const iconSize = Math.round(size * 0.5);
   return (
     <View
       style={{
@@ -79,13 +86,19 @@ export function LevelIcon({ level, size = 44 }) {
         justifyContent: 'center',
       }}
     >
-      <Icon name={info.icon} size={Math.round(size * 0.5)} color={info.color} />
+      {info.lib === 'mci' ? (
+        <MaterialCommunityIcons name={info.icon} size={iconSize} color={info.color} />
+      ) : (
+        <Ionicons name={info.icon} size={iconSize} color={info.color} />
+      )}
     </View>
   );
 }
 
 // ---------- Ortak parçalar ----------
-export function Header({ title, subtitle, onBack, right }) {
+type HeaderProps = { title: string; subtitle?: string; onBack?: () => void; right?: ReactNode };
+
+export function Header({ title, subtitle, onBack, right }: HeaderProps) {
   const { c } = useTheme();
   return (
     <View style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 8 }}>
@@ -105,7 +118,16 @@ export function Header({ title, subtitle, onBack, right }) {
   );
 }
 
-export function Btn({ label, onPress, icon, variant = 'primary', style, disabled }) {
+type BtnProps = {
+  label: string;
+  onPress: () => void;
+  icon?: IconName;
+  variant?: 'primary' | 'outline';
+  style?: StyleProp<ViewStyle>;
+  disabled?: boolean;
+};
+
+export function Btn({ label, onPress, icon, variant = 'primary', style, disabled }: BtnProps) {
   const { c } = useTheme();
   const primary = variant === 'primary';
   return (
@@ -139,7 +161,9 @@ export function Btn({ label, onPress, icon, variant = 'primary', style, disabled
   );
 }
 
-export function Card({ children, style, onPress }) {
+type CardProps = { children: ReactNode; style?: StyleProp<ViewStyle>; onPress?: () => void };
+
+export function Card({ children, style, onPress }: CardProps) {
   const { c } = useTheme();
   const base = {
     backgroundColor: c.card,
@@ -158,14 +182,16 @@ export function Card({ children, style, onPress }) {
   return <View style={[base, style]}>{children}</View>;
 }
 
-const TABS = [
-  { key: 'home', label: 'Ana Sayfa', icon: 'home' },
-  { key: 'play', label: 'Oyun', icon: 'game-controller' },
-  { key: 'stats', label: 'İstatistikler', icon: 'stats-chart' },
-  { key: 'profile', label: 'Profil', icon: 'person' },
+export type TabKey = 'home' | 'play' | 'stats' | 'profile';
+
+const TABS: { key: TabKey; label: string; icon: IconName; iconOff: IconName }[] = [
+  { key: 'home', label: 'Ana Sayfa', icon: 'home', iconOff: 'home-outline' },
+  { key: 'play', label: 'Oyun', icon: 'game-controller', iconOff: 'game-controller-outline' },
+  { key: 'stats', label: 'İstatistikler', icon: 'stats-chart', iconOff: 'stats-chart-outline' },
+  { key: 'profile', label: 'Profil', icon: 'person', iconOff: 'person-outline' },
 ];
 
-export function TabBar({ active, onTab }) {
+export function TabBar({ active, onTab }: { active: TabKey; onTab: (key: TabKey) => void }) {
   const { c } = useTheme();
   return (
     <View
@@ -189,7 +215,7 @@ export function TabBar({ active, onTab }) {
             accessibilityLabel={t.label}
             accessibilityState={{ selected: on }}
           >
-            <Ionicons name={on ? t.icon : `${t.icon}-outline`} size={24} color={on ? c.primary : c.sub} />
+            <Ionicons name={on ? t.icon : t.iconOff} size={24} color={on ? c.primary : c.sub} />
             <Text style={{ fontSize: 11, marginTop: 2, color: on ? c.primary : c.sub, fontWeight: on ? '700' : '500' }}>
               {t.label}
             </Text>
@@ -201,57 +227,64 @@ export function TabBar({ active, onTab }) {
 }
 
 // ---------- İsim girme penceresi ----------
-export function NameModal({ visible, title, subtitle, initial, confirmLabel = 'Devam', onSave, onCancel }) {
+type NameModalProps = {
+  visible: boolean;
+  title: string;
+  subtitle?: string;
+  initial?: string;
+  confirmLabel?: string;
+  onSave: (name: string) => void;
+  onCancel?: () => void;
+};
+
+export function NameModal({ visible, onCancel, ...form }: NameModalProps) {
+  return (
+    <Modal transparent animationType="fade" visible={visible} onRequestClose={onCancel}>
+      <NameForm {...form} onCancel={onCancel} />
+    </Modal>
+  );
+}
+
+// Modal kapanınca içeriği de kalkar, böylece her açılışta metin baştan gelir
+function NameForm({ title, subtitle, initial, confirmLabel = 'Devam', onSave, onCancel }: Omit<NameModalProps, 'visible'>) {
   const { c } = useTheme();
   const [text, setText] = useState(initial || '');
-
-  useEffect(() => {
-    if (visible) setText(initial || '');
-  }, [visible, initial]);
-
   const name = text.trim();
 
   return (
-    <Modal transparent animationType="fade" visible={visible} onRequestClose={onCancel}>
-      <View style={styles.modalBg}>
-        <View style={{ backgroundColor: c.card, borderRadius: 24, padding: 22, width: '100%' }}>
-          <Text style={{ fontSize: 22, fontWeight: '800', color: c.text, textAlign: 'center' }}>{title}</Text>
-          {subtitle ? (
-            <Text style={{ fontSize: 13, color: c.sub, textAlign: 'center', marginTop: 6 }}>{subtitle}</Text>
-          ) : null}
-          <TextInput
-            value={text}
-            onChangeText={setText}
-            placeholder="Adın"
-            placeholderTextColor={c.sub}
-            maxLength={20}
-            autoFocus
-            style={{
-              marginTop: 16,
-              height: 50,
-              borderRadius: 14,
-              borderWidth: 1,
-              borderColor: c.border,
-              paddingHorizontal: 14,
-              fontSize: 16,
-              color: c.text,
-              backgroundColor: c.bg,
-            }}
-          />
-          <Btn
-            label={confirmLabel}
-            onPress={() => name && onSave(name)}
-            disabled={!name}
-            style={{ marginTop: 16 }}
-          />
-          {onCancel ? (
-            <Pressable onPress={onCancel} style={{ alignItems: 'center', marginTop: 14 }}>
-              <Text style={{ color: c.sub, fontSize: 15 }}>Vazgeç</Text>
-            </Pressable>
-          ) : null}
-        </View>
+    <View style={styles.modalBg}>
+      <View style={{ backgroundColor: c.card, borderRadius: 24, padding: 22, width: '100%' }}>
+        <Text style={{ fontSize: 22, fontWeight: '800', color: c.text, textAlign: 'center' }}>{title}</Text>
+        {subtitle ? (
+          <Text style={{ fontSize: 13, color: c.sub, textAlign: 'center', marginTop: 6 }}>{subtitle}</Text>
+        ) : null}
+        <TextInput
+          value={text}
+          onChangeText={setText}
+          placeholder="Adın"
+          placeholderTextColor={c.sub}
+          maxLength={20}
+          autoFocus
+          style={{
+            marginTop: 16,
+            height: 50,
+            borderRadius: 14,
+            borderWidth: 1,
+            borderColor: c.border,
+            paddingHorizontal: 14,
+            fontSize: 16,
+            color: c.text,
+            backgroundColor: c.bg,
+          }}
+        />
+        <Btn label={confirmLabel} onPress={() => name && onSave(name)} disabled={!name} style={{ marginTop: 16 }} />
+        {onCancel ? (
+          <Pressable onPress={onCancel} style={{ alignItems: 'center', marginTop: 14 }}>
+            <Text style={{ color: c.sub, fontSize: 15 }}>Vazgeç</Text>
+          </Pressable>
+        ) : null}
       </View>
-    </Modal>
+    </View>
   );
 }
 

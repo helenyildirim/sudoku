@@ -1,4 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { emptyStats } from './game/progress';
+import type { DailyData, GameMode, Profile, SavedGame, Settings, Stats } from './types';
 
 const K = {
   profile: 'sudoku_profile_v1',
@@ -9,7 +11,7 @@ const K = {
   dailyGame: 'sudoku_game_daily_v1',
 };
 
-export const DEFAULT_SETTINGS = {
+export const DEFAULT_SETTINGS: Settings = {
   theme: 'light',
   boardColor: '#1F6BF5',
   haptics: true,
@@ -18,46 +20,33 @@ export const DEFAULT_SETTINGS = {
   lessonsSeen: false,
 };
 
-const emptyLevel = () => ({ played: 0, won: 0, best: null });
+export const DEFAULT_STATS: Stats = emptyStats();
 
-export const DEFAULT_STATS = {
-  played: 0,
-  won: 0,
-  bestTime: null,
-  levels: {
-    easy: emptyLevel(),
-    medium: emptyLevel(),
-    hard: emptyLevel(),
-    expert: emptyLevel(),
-  },
-  unlocked: {},
-};
+export const DEFAULT_DAILY: DailyData = { done: {} };
 
-export const DEFAULT_DAILY = { done: {} };
-
-async function get(key, fallback) {
+async function get<T>(key: string, fallback: T): Promise<T> {
   try {
     const v = await AsyncStorage.getItem(key);
     return v ? JSON.parse(v) : fallback;
-  } catch (e) {
+  } catch {
     return fallback;
   }
 }
 
-async function set(key, value) {
+async function set(key: string, value: unknown): Promise<void> {
   try {
     await AsyncStorage.setItem(key, JSON.stringify(value));
-  } catch (e) {}
+  } catch {}
 }
 
 export async function loadAll() {
   const [profile, settings, stats, daily, game, dailyGame] = await Promise.all([
-    get(K.profile, null),
+    get<Profile | null>(K.profile, null),
     get(K.settings, DEFAULT_SETTINGS),
     get(K.stats, DEFAULT_STATS),
     get(K.daily, DEFAULT_DAILY),
-    get(K.game, null),
-    get(K.dailyGame, null),
+    get<SavedGame | null>(K.game, null),
+    get<SavedGame | null>(K.dailyGame, null),
   ]);
   return {
     profile,
@@ -75,23 +64,23 @@ export async function loadAll() {
   };
 }
 
-export const saveProfile = (v) => set(K.profile, v);
-export const saveSettings = (v) => set(K.settings, v);
-export const saveStats = (v) => set(K.stats, v);
-export const saveDaily = (v) => set(K.daily, v);
-const gameKey = (mode) => (mode === 'daily' ? K.dailyGame : K.game);
+export const saveProfile = (v: Profile) => set(K.profile, v);
+export const saveSettings = (v: Settings) => set(K.settings, v);
+export const saveStats = (v: Stats) => set(K.stats, v);
+export const saveDaily = (v: DailyData) => set(K.daily, v);
+const gameKey = (mode: GameMode) => (mode === 'daily' ? K.dailyGame : K.game);
 
-export const saveGame = (v) => set(gameKey(v.mode), v);
-export const loadGame = (mode = 'normal') => get(gameKey(mode), null);
+export const saveGame = (v: SavedGame) => set(gameKey(v.mode), v);
+export const loadGame = (mode: GameMode = 'normal') => get<SavedGame | null>(gameKey(mode), null);
 
 export async function clearProfile() {
   try {
     await AsyncStorage.removeItem(K.profile);
-  } catch (e) {}
+  } catch {}
 }
 
-export async function clearGame(mode = 'normal') {
+export async function clearGame(mode: GameMode = 'normal') {
   try {
     await AsyncStorage.removeItem(gameKey(mode));
-  } catch (e) {}
+  } catch {}
 }

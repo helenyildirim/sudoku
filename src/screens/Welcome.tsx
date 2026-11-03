@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Btn } from '../ui';
 
 // Tasarımdaki açılış görseli. showStart=true: ilk açılış (Başla butonu var).
-export default function Welcome({ showStart, onStart }) {
+export default function Welcome({ showStart, onStart }: { showStart: boolean; onStart: () => void }) {
   const insets = useSafeAreaInsets();
   return (
     <ImageBackground

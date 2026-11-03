@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, LEVEL_INFO, LevelIcon } from '../ui';
-import { LEVELS, useTheme } from '../theme';
+import { LEVELS, LEVEL_KEYS, useTheme } from '../theme';
 import { currentStreak, fmtTime, longestStreak } from '../dates';
+import type { DailyData, IconName, Stats as StatsData } from '../types';
 
-export const pct = (won, played) => (played > 0 ? Math.round((won / played) * 100) : 0);
+export const pct = (won: number, played: number): number => (played > 0 ? Math.round((won / played) * 100) : 0);
 
-export function StatCard({ icon, label, value }) {
+export function StatCard({ icon, label, value }: { icon: IconName; label: string; value: string | number }) {
   const { c } = useTheme();
   return (
     <Card style={{ width: '48%', marginBottom: 12, paddingVertical: 16 }}>
@@ -20,7 +21,7 @@ export function StatCard({ icon, label, value }) {
 
 const TABS = ['Genel', 'Zorluklar', 'Mücadele'];
 
-export default function Stats({ stats, daily }) {
+export default function Stats({ stats, daily }: { stats: StatsData; daily: DailyData }) {
   const { c } = useTheme();
   const [tab, setTab] = useState(0);
   const longest = longestStreak(daily.done);
@@ -72,7 +73,7 @@ export default function Stats({ stats, daily }) {
             <Text style={{ fontSize: 17, fontWeight: '800', color: c.text, marginTop: 8, marginBottom: 12 }}>
               Zorluk Seviyelerine Göre
             </Text>
-            {Object.keys(LEVELS).map((lv) => {
+            {LEVEL_KEYS.map((lv) => {
               const s = stats.levels[lv];
               const p = pct(s.won, s.played);
               return (
@@ -92,7 +93,7 @@ export default function Stats({ stats, daily }) {
         ) : null}
 
         {tab === 1
-          ? Object.keys(LEVELS).map((lv) => {
+          ? LEVEL_KEYS.map((lv) => {
               const s = stats.levels[lv];
               return (
                 <Card key={lv} style={{ marginBottom: 12 }}>

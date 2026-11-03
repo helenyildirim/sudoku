@@ -2,17 +2,20 @@ import React, { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Btn, Header, LEVEL_INFO, LevelIcon } from '../ui';
-import { LEVELS, useTheme } from '../theme';
+import { LEVELS, LEVEL_KEYS, useTheme } from '../theme';
+import type { Level } from '../game/sudoku';
 
-export default function Difficulty({ onBack, onStart }) {
+type Props = { onBack: () => void; onStart: (level: Level) => void };
+
+export default function Difficulty({ onBack, onStart }: Props) {
   const { c } = useTheme();
-  const [selected, setSelected] = useState('easy');
+  const [selected, setSelected] = useState<Level>('easy');
 
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
       <Header title="Zorluk Seviyesi" subtitle="Kendine uygun seviyeyi seç." onBack={onBack} />
       <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 8 }}>
-        {Object.keys(LEVELS).map((lv) => {
+        {LEVEL_KEYS.map((lv) => {
           const on = selected === lv;
           return (
             <Pressable

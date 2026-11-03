@@ -1,7 +1,23 @@
 // Sudoku mantığı: tahta 81 elemanlı düz dizi, 0 = boş hücre
 
+export type Level = 'easy' | 'medium' | 'hard' | 'expert';
+export type Board = number[];
+export type Puzzle = { puzzle: Board; solution: Board };
+export type Unit = { name: string; cells: number[]; kind: 'box' | 'row' | 'col' };
+export type Hint = {
+  type: 'error' | 'naked' | 'hidden' | 'advanced';
+  cell: number;
+  value: number;
+  area: number[];
+  title: string;
+  text: string;
+};
+export type NakedSingle = { type: 'naked'; cell: number; value: number; area: number[] };
+export type HiddenSingle = { type: 'hidden'; cell: number; value: number; unit: Unit };
+type Rng = () => number;
+
 // Aynı tohumdan hep aynı sayıları üreten rastgele sayı üretici (günlük bulmaca için)
-export function mulberry32(seed) {
+export function mulberry32(seed: number): Rng {
   let a = seed | 0;
   return function () {
     a = (a + 0x6d2b79f5) | 0;
@@ -11,7 +27,7 @@ export function mulberry32(seed) {
   };
 }
 
-const shuffle = (arr, rng) => {
+const shuffle = <T,>(arr: T[], rng: Rng): T[] => {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
@@ -20,7 +36,7 @@ const shuffle = (arr, rng) => {
   return a;
 };
 
-export function canPlace(board, idx, n) {
+export function canPlace(board: Board, idx: number, n: number): boolean {
   const r = Math.floor(idx / 9);
   const c = idx % 9;
   for (let i = 0; i < 9; i++) {
@@ -37,7 +53,7 @@ export function canPlace(board, idx, n) {
   return true;
 }
 
-function fillBoard(board, rng) {
+function fillBoard(board: Board, rng: Rng): boolean {
   const idx = board.indexOf(0);
   if (idx === -1) return true;
   for (const n of shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9], rng)) {
@@ -51,9 +67,9 @@ function fillBoard(board, rng) {
 }
 
 // Çözüm sayısını (en fazla limit kadar) sayar
-function countSolutions(board, limit = 2) {
+function countSolutions(board: Board, limit = 2): number {
   let best = -1;
-  let bestCands = null;
+  let bestCands: number[] = [];
   for (let i = 0; i < 81; i++) {
     if (board[i] === 0) {
       const cands = [];
@@ -77,14 +93,14 @@ function countSolutions(board, limit = 2) {
   return total;
 }
 
-const REMOVE = { easy: 41, medium: 50, hard: 56, expert: 60 };
+const REMOVE: Record<Level, number> = { easy: 41, medium: 50, hard: 56, expert: 60 };
 
 // seed verilirse aynı seed her zaman aynı bulmacayı üretir
-function generateOnce(level, rng) {
-  const solution = Array(81).fill(0);
+function generateOnce(level: Level, rng: Rng): Puzzle {
+  const solution: Board = Array(81).fill(0);
   fillBoard(solution, rng);
   const puzzle = [...solution];
-  const target = REMOVE[level] ?? REMOVE.easy;
+  const target = REMOVE[level];
   let removed = 0;
   for (const idx of shuffle([...Array(81).keys()], rng)) {
     if (removed >= target) break;
@@ -100,7 +116,7 @@ function generateOnce(level, rng) {
 }
 
 // Boş hücreler için olası sayıları not (bit maskesi) olarak doldurur
-export function autoNotes(values) {
+export function autoNotes(values: Board): number[] {
   return values.map((v, i) => {
     if (v !== 0) return 0;
     let mask = 0;
@@ -109,7 +125,7 @@ export function autoNotes(values) {
   });
 }
 
-export function isPeer(a, b) {
+export function isPeer(a: number, b: number): boolean {
   const ra = Math.floor(a / 9);
   const ca = a % 9;
   const rb = Math.floor(b / 9);
@@ -127,15 +143,15 @@ export function isPeer(a, b) {
 // ---------------------------------------------------------------------------
 
 // Verilen tahtayı çözer (tek çözüm bekler); çözülemezse null döner
-export function solve(board) {
+export function solve(board: Board): Board | null {
   const b = [...board];
   let best = -1;
-  let bestCands = null;
+  let bestCands: number[] = [];
   for (let i = 0; i < 81; i++) {
     if (b[i] === 0) {
       const cands = [];
       for (let n = 1; n <= 9; n++) if (canPlace(b, i, n)) cands.push(n);
-      if (bestCands === null || cands.length < bestCands.length) {
+      if (best === -1 || cands.length < bestCands.length) {
         best = i;
         bestCands = cands;
         if (cands.length <= 1) break;
@@ -152,27 +168,27 @@ export function solve(board) {
 }
 
 // Bir hücrenin (satır, sütun, kutu) tüm komşuları
-export const peersOf = (idx) => {
-  const out = [];
+export const peersOf = (idx: number): number[] => {
+  const out: number[] = [];
   for (let i = 0; i < 81; i++) if (i !== idx && isPeer(idx, i)) out.push(i);
   return out;
 };
 
 // Her boş hücre için olası sayılar (dizi)
-export function candidates(values) {
+export function candidates(values: Board): number[][] {
   return values.map((v, i) => {
     if (v !== 0) return [];
-    const c = [];
+    const c: number[] = [];
     for (let n = 1; n <= 9; n++) if (canPlace(values, i, n)) c.push(n);
     return c;
   });
 }
 
 // 27 birim: 9 kutu, 9 satır, 9 sütun
-export const UNITS = (() => {
-  const u = [];
+export const UNITS: Unit[] = (() => {
+  const u: Unit[] = [];
   for (let b = 0; b < 9; b++) {
-    const cells = [];
+    const cells: number[] = [];
     const br = Math.floor(b / 3) * 3;
     const bc = (b % 3) * 3;
     for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) cells.push((br + i) * 9 + bc + j);
@@ -187,12 +203,12 @@ export const UNITS = (() => {
   return u;
 })();
 
-export const cellName = (i) => `${Math.floor(i / 9) + 1}. satır ${(i % 9) + 1}. sütun`;
+export const cellName = (i: number): string => `${Math.floor(i / 9) + 1}. satır ${(i % 9) + 1}. sütun`;
 
 // Tek aday: hücrede yalnızca bir sayı mümkün
-export function findNakedSingles(values) {
+export function findNakedSingles(values: Board): NakedSingle[] {
   const cands = candidates(values);
-  const out = [];
+  const out: NakedSingle[] = [];
   for (let i = 0; i < 81; i++) {
     if (values[i] === 0 && cands[i].length === 1) {
       out.push({
@@ -207,9 +223,9 @@ export function findNakedSingles(values) {
 }
 
 // Tek yer: bir birimde bir sayı yalnızca tek hücreye sığıyor
-export function findHiddenSingles(values) {
+export function findHiddenSingles(values: Board): HiddenSingle[] {
   const cands = candidates(values);
-  const out = [];
+  const out: HiddenSingle[] = [];
   for (const unit of UNITS) {
     for (let n = 1; n <= 9; n++) {
       if (unit.cells.some((c) => values[c] === n)) continue;
@@ -223,7 +239,7 @@ export function findHiddenSingles(values) {
 }
 
 // Akıllı ipucu: önce hataları, sonra tek aday, sonra tek yer, yoksa ileri teknik
-export function findHint(values, solution) {
+export function findHint(values: Board, solution: Board): Hint | null {
   const wrong = values.findIndex((v, i) => v !== 0 && v !== solution[i]);
   if (wrong !== -1) {
     return {
@@ -246,7 +262,9 @@ export function findHint(values, solution) {
   const hidden = findHiddenSingles(values)[0];
   if (hidden) {
     return {
-      ...hidden,
+      type: 'hidden',
+      cell: hidden.cell,
+      value: hidden.value,
       area: hidden.unit.cells,
       title: 'Tek Yer',
       text: `${hidden.unit.name} içinde ${hidden.value} sayısı sadece tek bir hücreye sığıyor: ${cellName(hidden.cell)}.`,
@@ -270,7 +288,7 @@ export function findHint(values, solution) {
 }
 
 // Bulmacanın zorluk puanı: çözmek için gereken tekniklere göre
-export function difficultyScore(puzzle, solution) {
+export function difficultyScore(puzzle: Board, solution: Board): number {
   const v = [...puzzle];
   let score = 0;
   for (let g = 0; g < 90 && v.includes(0); g++) {
@@ -283,23 +301,22 @@ export function difficultyScore(puzzle, solution) {
   return score;
 }
 
-const MIN_SCORE = { easy: 0, medium: 2, hard: 8, expert: 18 };
+const MIN_SCORE: Record<Level, number> = { easy: 0, medium: 2, hard: 8, expert: 18 };
 
 // Zorluk seviyesi hem silinen hücre sayısına hem gereken tekniklere göre ayarlanır
-export function generatePuzzle(level = 'easy', seed = null) {
+export function generatePuzzle(level: Level = 'easy', seed: number | null = null): Puzzle {
   const rng = seed == null ? Math.random : mulberry32(seed);
-  const need = MIN_SCORE[level] ?? 0;
-  let best = null;
-  let bestScore = -1;
-  for (let attempt = 0; attempt < 14; attempt++) {
+  const need = MIN_SCORE[level];
+  let best = generateOnce(level, rng);
+  if (need === 0) return best;
+  let bestScore = difficultyScore(best.puzzle, best.solution);
+  for (let attempt = 1; attempt < 14 && bestScore < need; attempt++) {
     const p = generateOnce(level, rng);
-    if (need === 0) return p;
     const sc = difficultyScore(p.puzzle, p.solution);
     if (sc > bestScore) {
       best = p;
       bestScore = sc;
     }
-    if (sc >= need) break;
   }
   return best;
 }

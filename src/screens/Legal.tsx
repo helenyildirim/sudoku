@@ -3,7 +3,9 @@ import { ScrollView, Text, View } from 'react-native';
 import { Header } from '../ui';
 import { useTheme } from '../theme';
 
-const DOCS = {
+export type LegalKind = 'privacy' | 'terms';
+
+const DOCS: Record<LegalKind, { title: string; sections: [string, string][] }> = {
   privacy: {
     title: 'Gizlilik Politikası',
     sections: [
@@ -23,9 +25,9 @@ const DOCS = {
   },
 };
 
-export default function Legal({ kind, onBack }) {
+export default function Legal({ kind, onBack }: { kind: LegalKind; onBack: () => void }) {
   const { c } = useTheme();
-  const doc = DOCS[kind] || DOCS.privacy;
+  const doc = DOCS[kind];
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
       <Header title={doc.title} onBack={onBack} />

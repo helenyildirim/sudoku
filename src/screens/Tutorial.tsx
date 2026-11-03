@@ -3,7 +3,13 @@ import { Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-na
 import { Ionicons } from '@expo/vector-icons';
 import { Btn, Header } from '../ui';
 import { useTheme } from '../theme';
-import { UNITS, candidates, cellName, findHiddenSingles, findNakedSingles } from '../../sudoku';
+import { UNITS, candidates, cellName, findHiddenSingles, findNakedSingles, type Board } from '../game/sudoku';
+import type { IconName } from '../types';
+
+type MiniBoardProps = { values: Board; area?: number[]; focus?: number | null; notes?: number[] | null };
+type QuizData = { question?: string; answer: number; options: number[]; labels?: string[] };
+type Page = { title: string; text: string; board?: MiniBoardProps; quiz?: QuizData };
+type Lesson = { id: string; title: string; sub: string; icon: IconName; pages: Page[] };
 
 // Dersler için sabit, kolay bir örnek bulmaca
 const DEMO = '530070000600195000098000060800060003400803001700020006060000280000419005000080079'
@@ -11,7 +17,7 @@ const DEMO = '530070000600195000098000060800060003400803001700020006060000280000
   .map(Number);
 
 // Küçük, dokunulmaz örnek tahta
-function MiniBoard({ values, area = [], focus = null, notes = null }) {
+function MiniBoard({ values, area = [], focus = null, notes = null }: MiniBoardProps) {
   const { c, boardColor } = useTheme();
   const { width } = useWindowDimensions();
   const cell = Math.floor(Math.min(width - 40, 380) / 9);
@@ -76,7 +82,7 @@ function MiniBoard({ values, area = [], focus = null, notes = null }) {
 }
 
 // Derslerin içeriği örnek bulmacadan otomatik hesaplanır
-function buildLessons() {
+function buildLessons(): Lesson[] {
   const naked = findNakedSingles(DEMO);
   const hidden = findHiddenSingles(DEMO).filter((h) => h.unit.kind === 'box');
   const hid = hidden[0] || findHiddenSingles(DEMO)[0];
@@ -86,13 +92,13 @@ function buildLessons() {
   const multi = DEMO.findIndex((v, i) => v === 0 && cands[i].length >= 3);
 
   // Yanlış şıklar: hücrenin komşularında zaten olan sayılar
-  const options = (cell, answer, area) => {
+  const options = (answer: number, area: number[]) => {
     const wrong = [...new Set(area.map((a) => DEMO[a]).filter((x) => x && x !== answer))].slice(0, 3);
     const all = [answer, ...wrong].sort((a, b) => a - b);
     return all;
   };
-  const row = (r) => [...Array(9).keys()].map((k) => r * 9 + k);
-  const col = (k) => [...Array(9).keys()].map((r) => r * 9 + k);
+  const row = (r: number) => [...Array(9).keys()].map((k) => r * 9 + k);
+  const col = (k: number) => [...Array(9).keys()].map((r) => r * 9 + k);
 
   return [
     {
@@ -143,7 +149,7 @@ function buildLessons() {
           title: 'Şimdi sen dene',
           text: 'Mavi hücreye hangi sayı gelmeli? Turuncu hücrelere bakıp eksik olanı bul.',
           board: { values: DEMO, area: n2.area, focus: n2.cell },
-          quiz: { answer: n2.value, options: options(n2.cell, n2.value, n2.area) },
+          quiz: { answer: n2.value, options: options(n2.value, n2.area) },
         },
       ],
     },
@@ -216,9 +222,9 @@ function buildLessons() {
   ];
 }
 
-function Quiz({ quiz, onResult }) {
+function Quiz({ quiz, onResult }: { quiz: QuizData; onResult: (ok: boolean) => void }) {
   const { c } = useTheme();
-  const [picked, setPicked] = useState(null);
+  const [picked, setPicked] = useState<number | null>(null);
   const ok = picked === quiz.answer;
   return (
     <View style={{ marginTop: 14 }}>
@@ -264,10 +270,17 @@ function Quiz({ quiz, onResult }) {
   );
 }
 
-export default function Tutorial({ done = {}, onComplete, onBack, onPlay }) {
+type Props = {
+  done?: Record<string, boolean>;
+  onComplete: (id: string) => void;
+  onBack: () => void;
+  onPlay: () => void;
+};
+
+export default function Tutorial({ done = {}, onComplete, onBack, onPlay }: Props) {
   const { c } = useTheme();
-  const lessons = useMemo(buildLessons, []);
-  const [lessonId, setLessonId] = useState(null);
+  const lessons = useMemo(() => buildLessons(), []);
+  const [lessonId, setLessonId] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [solved, setSolved] = useState(false);
 

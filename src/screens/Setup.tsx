@@ -4,7 +4,7 @@ import { Btn, LogoMark } from '../ui';
 import { useTheme } from '../theme';
 
 // Sadece ilk açılışta görünen "Adın nedir?" ekranı
-export default function Setup({ onDone }) {
+export default function Setup({ onDone }: { onDone: (name: string) => void }) {
   const { c } = useTheme();
   const [text, setText] = useState('');
   const name = text.trim();
