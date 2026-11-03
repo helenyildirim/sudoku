@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Moved the whole project to strict TypeScript
+- Added ESLint and type checks to CI
+- Split the game screen and moved its moves and statistics into tested modules
+
 ## 1.1.0
 
 - Daily and regular games now save separately, so one no longer replaces the other
