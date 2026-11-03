@@ -5,6 +5,8 @@
 
 A Sudoku game for Android built with Expo and React Native. The interface is in Turkish.
 
+**[Download the Android APK](https://github.com/helenyildirim/sudoku/releases/latest)**
+
 <p>
   <img src="docs/home.png" width="260" alt="Home screen" />
   <img src="docs/game.png" width="260" alt="Game screen" />
