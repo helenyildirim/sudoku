@@ -1,5 +1,7 @@
+import type { Achievement } from './types';
+
 // Başarımlar. check(stats, ctx): stats = genel istatistik, ctx = biten oyunun bilgisi
-export const ACHIEVEMENTS = [
+export const ACHIEVEMENTS: Achievement[] = [
   { id: 'first_game', title: 'İlk Adım', desc: 'İlk oyununu bitir.', icon: 'flag', check: (s) => s.played >= 1 },
   { id: 'first_win', title: 'İlk Zafer', desc: 'Bir bulmacayı çöz.', icon: 'star', check: (s) => s.won >= 1 },
   { id: 'win10', title: '10 Zafer', desc: '10 bulmaca çöz.', icon: 'trophy', check: (s) => s.won >= 10 },

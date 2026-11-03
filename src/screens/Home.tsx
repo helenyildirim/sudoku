@@ -4,8 +4,9 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Card } from '../ui';
 import { LEVELS, useTheme } from '../theme';
 import { fmtTime, todayKey } from '../dates';
+import type { DailyData, IconName, Profile, SavedGame } from '../types';
 
-function Tile({ icon, label, onPress }) {
+function Tile({ icon, label, onPress }: { icon: IconName; label: string; onPress: () => void }) {
   const { c } = useTheme();
   return (
     <Pressable
@@ -27,7 +28,33 @@ function Tile({ icon, label, onPress }) {
   );
 }
 
-export default function Home({ profile, saved, daily, lessonsDone = 0, onLearn, onNewGame, onResume, onDaily, onStats, onProfile, onSettings }) {
+type Props = {
+  profile: Profile | null;
+  saved: SavedGame | null;
+  daily: DailyData;
+  lessonsDone?: number;
+  onLearn: () => void;
+  onNewGame: () => void;
+  onResume: () => void;
+  onDaily: () => void;
+  onStats: () => void;
+  onProfile: () => void;
+  onSettings: () => void;
+};
+
+export default function Home({
+  profile,
+  saved,
+  daily,
+  lessonsDone = 0,
+  onLearn,
+  onNewGame,
+  onResume,
+  onDaily,
+  onStats,
+  onProfile,
+  onSettings,
+}: Props) {
   const { c } = useTheme();
   const name = (profile && profile.name) || 'Oyuncu';
   const dailyDone = !!daily.done[todayKey()];

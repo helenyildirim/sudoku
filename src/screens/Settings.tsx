@@ -1,15 +1,32 @@
-import React from 'react';
+import React, { type ReactNode } from 'react';
 import { Pressable, ScrollView, Share, Switch, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Header } from '../ui';
 import { BOARD_COLORS, useTheme } from '../theme';
+import type { LegalKind } from './Legal';
+import type { IconName, Settings as SettingsData } from '../types';
 
-function SectionTitle({ children }) {
+const THEMES = [
+  ['light', 'Açık'],
+  ['dark', 'Koyu'],
+] as const;
+
+function SectionTitle({ children }: { children: ReactNode }) {
   const { c } = useTheme();
   return <Text style={{ fontSize: 15, fontWeight: '800', color: c.text, marginTop: 22, marginBottom: 10 }}>{children}</Text>;
 }
 
-function ToggleRow({ icon, label, note, value, onValueChange, disabled, last }) {
+type ToggleRowProps = {
+  icon: IconName;
+  label: string;
+  note?: string;
+  value: boolean;
+  onValueChange: (value: boolean) => void;
+  disabled?: boolean;
+  last?: boolean;
+};
+
+function ToggleRow({ icon, label, note, value, onValueChange, disabled, last }: ToggleRowProps) {
   const { c } = useTheme();
   return (
     <View
@@ -37,7 +54,9 @@ function ToggleRow({ icon, label, note, value, onValueChange, disabled, last }) 
   );
 }
 
-function LinkRow({ icon, label, onPress, last }) {
+type LinkRowProps = { icon: IconName; label: string; onPress: () => void; last?: boolean };
+
+function LinkRow({ icon, label, onPress, last }: LinkRowProps) {
   const { c } = useTheme();
   return (
     <Pressable
@@ -57,7 +76,14 @@ function LinkRow({ icon, label, onPress, last }) {
   );
 }
 
-export default function Settings({ settings, onChange, onBack, onLegal }) {
+type Props = {
+  settings: SettingsData;
+  onChange: (patch: Partial<SettingsData>) => void;
+  onBack: () => void;
+  onLegal: (kind: LegalKind) => void;
+};
+
+export default function Settings({ settings, onChange, onBack, onLegal }: Props) {
   const { c } = useTheme();
 
   const share = () => {
@@ -72,10 +98,7 @@ export default function Settings({ settings, onChange, onBack, onLegal }) {
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <Text style={{ fontSize: 15, color: c.text, fontWeight: '600', marginRight: 14 }}>Tema</Text>
           <View style={{ flex: 1, flexDirection: 'row', backgroundColor: c.primarySoft, borderRadius: 20, padding: 4 }}>
-            {[
-              ['light', 'Açık'],
-              ['dark', 'Koyu'],
-            ].map(([key, label]) => {
+            {THEMES.map(([key, label]) => {
               const on = settings.theme === key;
               return (
                 <Pressable

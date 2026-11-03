@@ -24,7 +24,11 @@ A Sudoku game for Android built with Expo and React Native. The interface is in 
 
 ## How it works
 
-All game logic is in `sudoku.js`, separate from the UI.
+Game logic lives in `src/game/` and has no UI dependencies, so it can be tested directly.
+
+- `sudoku.ts` generates puzzles, solves them and finds hints.
+- `session.ts` holds the moves: placing a value, notes, erasing and undo-safe updates.
+- `progress.ts` turns a finished game into statistics, streaks and achievements.
 
 - The board is a flat array of 81 numbers, with `0` for an empty cell.
 - A puzzle starts as a full board filled by randomized backtracking. Cells are then removed one at a time, and a removal is kept only if the puzzle still has exactly one solution.
@@ -38,13 +42,15 @@ npm install
 npx expo start
 ```
 
-## Tests
+## Checks
 
 ```
+npm run typecheck
+npm run lint
 npm test
 ```
 
-The tests cover puzzle generation, seeded output, the solver and the hint engine.
+The tests cover puzzle generation, seeded output, the solver, the hint engine, game moves, statistics and streaks. One test pins a known daily puzzle, so a generator change cannot silently give players different puzzles.
 
 ## Build
 
@@ -52,7 +58,7 @@ GitHub Actions builds a release APK on every push to `main` and publishes it und
 
 ## Stack
 
-Expo SDK 57, React Native, AsyncStorage
+Expo SDK 57, React Native, TypeScript, AsyncStorage
 
 ## License
 

@@ -4,11 +4,11 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { DARK, LIGHT, ThemeContext } from './src/theme';
-import { TabBar } from './src/ui';
+import { TabBar, type TabKey } from './src/ui';
 import ErrorBoundary from './src/ErrorBoundary';
-import { autoNotes, generatePuzzle } from './sudoku';
-import { ACHIEVEMENTS } from './src/achievements';
-import { longestStreak, seedFromKey, todayKey } from './src/dates';
+import { autoNotes, generatePuzzle, type Level } from './src/game/sudoku';
+import { recordResult } from './src/game/progress';
+import { seedFromKey, todayKey } from './src/dates';
 import {
   DEFAULT_DAILY,
   DEFAULT_SETTINGS,
@@ -33,7 +33,8 @@ import Stats from './src/screens/Stats';
 import Profile from './src/screens/Profile';
 import Settings from './src/screens/Settings';
 import Tutorial from './src/screens/Tutorial';
-import Legal from './src/screens/Legal';
+import Legal, { type LegalKind } from './src/screens/Legal';
+import type { DailyData, GameMode, GameOutcome, Profile as ProfileData, SavedGame, Settings as SettingsData, Stats as StatsData } from './src/types';
 
 export default function App() {
   return (
@@ -46,19 +47,35 @@ export default function App() {
 }
 
 // Alt çubuğu olan ekranlar ve hangi sekmeyi yaktıkları
-const TAB_OF = { home: 'home', difficulty: 'play', stats: 'stats', profile: 'profile' };
+const TAB_OF: Partial<Record<Screen, TabKey>> = { home: 'home', difficulty: 'play', stats: 'stats', profile: 'profile' };
+
+type Screen =
+  | 'boot'
+  | 'welcome'
+  | 'splash'
+  | 'setup'
+  | 'home'
+  | 'tutorial'
+  | 'difficulty'
+  | 'generating'
+  | 'game'
+  | 'daily'
+  | 'stats'
+  | 'profile'
+  | 'settings'
+  | 'legal';
 
 function Root() {
-  const [screen, setScreen] = useState('boot');
-  const [profile, setProfile] = useState(null);
-  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
-  const [stats, setStats] = useState(DEFAULT_STATS);
-  const [daily, setDaily] = useState(DEFAULT_DAILY);
-  const [saved, setSaved] = useState(null);
-  const [savedDaily, setSavedDaily] = useState(null);
-  const [game, setGame] = useState(null);
+  const [screen, setScreen] = useState<Screen>('boot');
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [settings, setSettings] = useState<SettingsData>(DEFAULT_SETTINGS);
+  const [stats, setStats] = useState<StatsData>(DEFAULT_STATS);
+  const [daily, setDaily] = useState<DailyData>(DEFAULT_DAILY);
+  const [saved, setSaved] = useState<SavedGame | null>(null);
+  const [savedDaily, setSavedDaily] = useState<SavedGame | null>(null);
+  const [game, setGame] = useState<SavedGame | null>(null);
   const [gameKey, setGameKey] = useState(0);
-  const [legal, setLegal] = useState('privacy');
+  const [legal, setLegal] = useState<LegalKind>('privacy');
 
   // Açılışta kayıtlı verileri yükle
   useEffect(() => {
@@ -112,13 +129,13 @@ function Root() {
   const c = settings.theme === 'dark' ? DARK : LIGHT;
   const themeValue = useMemo(() => ({ c, boardColor: settings.boardColor }), [c, settings.boardColor]);
 
-  const changeSettings = (patch) => {
+  const changeSettings = (patch: Partial<SettingsData>) => {
     const next = { ...settings, ...patch };
     setSettings(next);
     saveSettings(next);
   };
 
-  const finishSetup = (name) => {
+  const finishSetup = (name: string) => {
     const p = { name };
     setProfile(p);
     saveProfile(p);
@@ -126,8 +143,8 @@ function Root() {
     setScreen('tutorial');
   };
 
-  const updateName = (name) => {
-    const p = { ...(profile || {}), name };
+  const updateName = (name: string) => {
+    const p = { ...profile, name };
     setProfile(p);
     saveProfile(p);
   };
@@ -138,7 +155,7 @@ function Root() {
     setScreen('welcome');
   };
 
-  const startGame = (level, mode = 'normal') => {
+  const startGame = (level: Level, mode: GameMode = 'normal') => {
     // Zor bulmacalar yavaş telefonda zaman alabilir: önce yükleme ekranı çizilsin
     setScreen('generating');
     setTimeout(() => {
@@ -198,38 +215,15 @@ function Root() {
   };
 
   // Oyun bitince istatistik, günlük seri ve başarımları güncelle
-  const handleFinish = async (res) => {
-    const st = JSON.parse(JSON.stringify(stats));
-    const lv = st.levels[res.level];
-    const prevBest = lv.best;
-    st.played += 1;
-    lv.played += 1;
-    if (res.won) {
-      st.won += 1;
-      lv.won += 1;
-      if (st.bestTime == null || res.seconds < st.bestTime) st.bestTime = res.seconds;
-      if (lv.best == null || res.seconds < lv.best) lv.best = res.seconds;
+  const handleFinish = async (res: GameOutcome) => {
+    const next = recordResult(stats, daily, res);
+    if (next.daily !== daily) {
+      setDaily(next.daily);
+      await saveDaily(next.daily);
     }
-
-    let nd = daily;
-    if (res.won && res.mode === 'daily' && res.dateKey) {
-      nd = { ...daily, done: { ...daily.done, [res.dateKey]: { seconds: res.seconds } } };
-      setDaily(nd);
-      await saveDaily(nd);
-    }
-
-    const ctx = {
-      ...res,
-      longest: longestStreak(nd.done),
-      dailyCount: Object.keys(nd.done).length,
-    };
-    const newly = ACHIEVEMENTS.filter((a) => !st.unlocked[a.id] && a.check(st, ctx)).map((a) => a.id);
-    newly.forEach((id) => {
-      st.unlocked[id] = true;
-    });
-    setStats(st);
-    await saveStats(st);
-    return { newly, record: res.won && (prevBest == null || res.seconds < prevBest) };
+    setStats(next.stats);
+    await saveStats(next.stats);
+    return { newly: next.newly, record: next.record };
   };
 
   if (screen === 'boot') {
@@ -282,7 +276,7 @@ function Root() {
       body = <Difficulty onBack={() => setScreen('home')} onStart={(lv) => startGame(lv)} />;
       break;
     case 'game':
-      body = (
+      body = game ? (
         <Game
           key={gameKey}
           initial={game}
@@ -291,7 +285,7 @@ function Root() {
           onFinish={handleFinish}
           onChangeLevel={changeLevel}
         />
-      );
+      ) : null;
       break;
     case 'daily':
       body = <Daily daily={daily} onBack={() => setScreen('home')} onPlay={openDaily} />;
@@ -340,12 +334,7 @@ function Root() {
   }
 
   const tab = TAB_OF[screen];
-  const onTab = (key) => {
-    if (key === 'home') setScreen('home');
-    else if (key === 'play') setScreen('difficulty');
-    else if (key === 'stats') setScreen('stats');
-    else if (key === 'profile') setScreen('profile');
-  };
+  const onTab = (key: TabKey) => setScreen(key === 'play' ? 'difficulty' : key);
 
   return (
     <ThemeContext.Provider value={themeValue}>

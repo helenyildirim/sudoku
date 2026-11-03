@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { type ReactNode } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 // Beklenmedik bir hata uygulamayı beyaz ekranda bırakmasın
-export default class ErrorBoundary extends React.Component {
+export default class ErrorBoundary extends React.Component<{ children: ReactNode }, { failed: boolean }> {
   state = { failed: false };
 
   static getDerivedStateFromError() {

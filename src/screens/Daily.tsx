@@ -4,8 +4,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { Btn, Card, Header } from '../ui';
 import { useTheme } from '../theme';
 import { currentStreak, fmtTime, todayKey, weekDays } from '../dates';
+import type { DailyData } from '../types';
 
-export default function Daily({ daily, onBack, onPlay }) {
+type Props = { daily: DailyData; onBack: () => void; onPlay: () => void };
+
+export default function Daily({ daily, onBack, onPlay }: Props) {
   const { c } = useTheme();
   const days = weekDays();
   const today = todayKey();

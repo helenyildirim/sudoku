@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   UNITS,
+  type Level,
   autoNotes,
   candidates,
   canPlace,
@@ -14,17 +15,14 @@ import {
   mulberry32,
   peersOf,
   solve,
-} from '../sudoku.js';
+} from '../src/game/sudoku';
 
-const LEVELS = ['easy', 'medium', 'hard', 'expert'];
+const LEVELS: Level[] = ['easy', 'medium', 'hard', 'expert'];
 const DIGITS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
-const isValidSolution = (board) =>
+const isValidSolution = (board: number[]) =>
   board.length === 81 &&
-  UNITS.every((unit) => {
-    const cells = unit.cells ?? unit;
-    return [...cells.map((i) => board[i])].sort((a, b) => a - b).join() === DIGITS.join();
-  });
+  UNITS.every((unit) => unit.cells.map((i) => board[i]).sort((a, b) => a - b).join() === DIGITS.join());
 
 test('mulberry32 is deterministic for a seed', () => {
   const a = mulberry32(42);
@@ -66,10 +64,15 @@ for (const level of LEVELS) {
       puzzle.forEach((v, i) => {
         if (v !== 0) assert.equal(v, solution[i]);
       });
-      assert.deepEqual([...solve(puzzle)], [...solution]);
+      assert.deepEqual(solve(puzzle), solution);
     }
   });
 }
+
+// Oyuncular aynı gün aynı bulmacayı görmeli: üretici değişirse bu test uyarır
+test('the daily puzzle for a known date never changes', () => {
+  assert.equal(generatePuzzle('medium', 20261102).puzzle.join(''), '800074051003001700500069004050000080900000003300000576002107345004000020000403900');
+});
 
 test('the same seed gives the same daily puzzle', () => {
   assert.deepEqual(generatePuzzle('medium', 20261102), generatePuzzle('medium', 20261102));
@@ -88,9 +91,9 @@ test('hints point out a wrong value first', () => {
   const empty = values.indexOf(0);
   values[empty] = (solution[empty] % 9) + 1;
   const hint = findHint(values, solution);
-  assert.equal(hint.type, 'error');
-  assert.equal(hint.cell, empty);
-  assert.equal(hint.value, solution[empty]);
+  assert.equal(hint?.type, 'error');
+  assert.equal(hint?.cell, empty);
+  assert.equal(hint?.value, solution[empty]);
 });
 
 test('hints return null on a finished board', () => {
@@ -103,6 +106,7 @@ test('following hints finishes the puzzle', () => {
   const values = [...puzzle];
   for (let i = 0; i < 81 && values.includes(0); i++) {
     const hint = findHint(values, solution);
+    assert.ok(hint);
     values[hint.cell] = hint.value;
   }
   assert.deepEqual(values, solution);

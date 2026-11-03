@@ -5,8 +5,11 @@ import { Card, NameModal } from '../ui';
 import { useTheme } from '../theme';
 import { ACHIEVEMENTS } from '../achievements';
 import { StatCard, pct } from './Stats';
+import type { Achievement, IconName, Profile as ProfileData, Stats, ThemeName } from '../types';
 
-function Row({ icon, label, right, onPress, last }) {
+type RowProps = { icon: IconName; label: string; right?: string; onPress?: () => void; last?: boolean };
+
+function Row({ icon, label, right, onPress, last }: RowProps) {
   const { c } = useTheme();
   return (
     <Pressable
@@ -28,13 +31,22 @@ function Row({ icon, label, right, onPress, last }) {
   );
 }
 
-export default function Profile({ profile, stats, theme, onEditName, onToggleTheme, onLogout }) {
+type Props = {
+  profile: ProfileData | null;
+  stats: Stats;
+  theme: ThemeName;
+  onEditName: (name: string) => void;
+  onToggleTheme: () => void;
+  onLogout: () => void;
+};
+
+export default function Profile({ profile, stats, theme, onEditName, onToggleTheme, onLogout }: Props) {
   const { c } = useTheme();
   const [editing, setEditing] = useState(false);
   const name = (profile && profile.name) || 'Oyuncu';
   const unlockedCount = ACHIEVEMENTS.filter((a) => stats.unlocked[a.id]).length;
 
-  const showAchievement = (a) => {
+  const showAchievement = (a: Achievement) => {
     const on = !!stats.unlocked[a.id];
     Alert.alert(a.title, `${a.desc}${on ? '\n\nKazanıldı ✓' : '\n\nHenüz kilitli.'}`);
   };

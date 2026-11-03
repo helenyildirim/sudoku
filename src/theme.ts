@@ -1,4 +1,5 @@
 import { createContext, useContext } from 'react';
+import type { Level } from './game/sudoku';
 
 export const LIGHT = {
   dark: false,
@@ -19,7 +20,9 @@ export const LIGHT = {
   gradient: ['#DCEBFF', '#F2F7FF', '#FFFFFF'],
 };
 
-export const DARK = {
+export type Colors = typeof LIGHT;
+
+export const DARK: Colors = {
   dark: true,
   bg: '#0B1530',
   card: '#15244B',
@@ -41,7 +44,8 @@ export const DARK = {
 // Ayarlar > Tahta Rengi
 export const BOARD_COLORS = ['#1F6BF5', '#38BDF8', '#14B8A6', '#8B5CF6', '#F59E0B'];
 
-export const ThemeContext = createContext({ c: LIGHT, boardColor: BOARD_COLORS[0] });
+export const ThemeContext = createContext<{ c: Colors; boardColor: string }>({ c: LIGHT, boardColor: BOARD_COLORS[0] });
 export const useTheme = () => useContext(ThemeContext);
 
-export const LEVELS = { easy: 'Kolay', medium: 'Orta', hard: 'Zor', expert: 'Uzman' };
+export const LEVELS: Record<Level, string> = { easy: 'Kolay', medium: 'Orta', hard: 'Zor', expert: 'Uzman' };
+export const LEVEL_KEYS = Object.keys(LEVELS) as Level[];
